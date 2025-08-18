@@ -18,9 +18,9 @@ the input log is too big - an no check is made for that case...
 
 ### You may build and extend as needed
 
-![ClientList](https://raw.githubusercontent.com/bm98/SConnectLogReader/Doc/ClientList.png "Client List")
-![ExceptionView](https://raw.githubusercontent.com/bm98/SConnectLogReader/Doc/ExceptionView.png "Exception View")
-![FocusLog](https://raw.githubusercontent.com/bm98/SConnectLogReader/Doc/FocusLog.png "Focus Log")
+![ClientList](https://raw.githubusercontent.com/bm98/SConnectLogReader/refs/heads/main/Doc/ClientList.png "Client List")
+![ExceptionView](https://raw.githubusercontent.com/bm98/SConnectLogReader/refs/heads/main/Doc/ExceptionView.png "Exception View")
+![FocusLog](https://raw.githubusercontent.com/bm98/SConnectLogReader/refs/heads/main/Doc/FocusLog.png "Focus Log")
 
 
 ---

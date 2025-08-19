@@ -19,9 +19,10 @@ namespace SCLogLib
       var ret = new ClientCat( );
 
       var opens = log.Where( ll => ll.LogLineType == LineType.Open );
-      foreach (var l in opens) {
-        var client = new Client( l.ClientNumber, l.Arguments.FirstOrDefault( p => p.Argument == ArgNames.NameS ).ArgS );
-        ret.Add( l.ClientNumber, client );
+      foreach (var openLine in opens) {
+        var llines = log.Where( ll => ll.ClientNumber == openLine.ClientNumber );
+        var client = new Client( openLine.ClientNumber, openLine.Arguments.FirstOrDefault( p => p.Argument == ArgNames.NameS ).ArgS, llines.Count( ) );
+        ret.Add( openLine.ClientNumber, client );
       }
       return ret;
     }
@@ -37,18 +38,24 @@ namespace SCLogLib
     public string ClientName { get; protected set; }
 
     /// <summary>
+    /// Number of LogLines in the file
+    /// </summary>
+    public long NumberOfLogLines { get; protected set; }
+
+    /// <summary>
     /// cTor:
     /// </summary>
-    public Client( long clientNumber, string clientName )
+    public Client( long clientNumber, string clientName, long numLines )
     {
       ClientNumber = clientNumber;
       ClientName = clientName;
+      NumberOfLogLines = numLines;
     }
 
     /// <inheritdoc/>
     public override string ToString( )
     {
-      return $"{ClientNumber,-5}: {ClientName}";
+      return $"{ClientNumber,-5}: {ClientName} ({NumberOfLogLines:###,###,##0} lines)";
     }
 
   }

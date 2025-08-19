@@ -16,6 +16,7 @@ namespace SCLogLib
     private StreamReader _reader = null;
     // read line counter
     private long _lineCount = 0;
+    private double _byteCount = 0;
 
     /// <summary>
     /// Fired when the line counter is updated (every 1000 lines for now)
@@ -28,6 +29,7 @@ namespace SCLogLib
     public SCL_Reader( )
     {
       _lineCount = 0;
+      _byteCount = 0;
     }
 
     /// <summary>
@@ -47,6 +49,11 @@ namespace SCLogLib
     /// number of lines returned
     /// </summary>
     public long LinesRead => _lineCount;
+
+    /// <summary>
+    /// Returns the percentage of the file read
+    /// </summary>
+    public double PercentRead => Math.Min( (_byteCount / _reader.BaseStream.Length) * 100.0, 100.0 );
 
     /// <summary>
     /// Size of the file opened or -1
@@ -94,9 +101,13 @@ namespace SCLogLib
       if (_reader.EndOfStream) return "";
 
       try {
-        string line = RemoveNULL( _reader.ReadLine( ) );
+        string line = _reader.ReadLine( );
+        _byteCount += line.Length + 2; // file is ASCII/ANSI not multibyte Unicode +crlf
+        line = RemoveNULL( line );
+
         while (string.IsNullOrEmpty( line )) {
           line = RemoveNULL( _reader.ReadLine( ) );
+          _byteCount += 2; // crlf
         }
         _lineCount++;
 
@@ -104,7 +115,9 @@ namespace SCLogLib
 
         return line;
       }
-      catch { }
+      catch (Exception ex){
+        ;
+      }
       return "";
     }
 

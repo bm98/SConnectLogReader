@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SCLogLib;
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -10,7 +12,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using SCLogLib;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SConnectLogReader
 {
@@ -37,6 +39,8 @@ namespace SConnectLogReader
     private void Form1_Load( object sender, EventArgs e )
     {
       tlp.Dock = DockStyle.Fill;
+
+      PBar_FromThread( 0 );
 
       clbIgnore.Items.Clear( );
       foreach (var item in _ignoreableItems) {
@@ -146,6 +150,7 @@ namespace SConnectLogReader
     private void _reader_LineCountUpdate( object sender, EventArgs e )
     {
       SetText_FromThread( txNumEntries, _reader.LinesRead.ToString( "###,###,##0" ) );
+      PBar_FromThread( _reader.PercentRead );
     }
 
     private void btWriteJSON_Click( object sender, EventArgs e )
@@ -156,7 +161,12 @@ namespace SConnectLogReader
       SFD.Title = "Write to JSON";
       SFD.FileName = "LogDump.json";
       if (SFD.ShowDialog( ) == DialogResult.OK) {
-        _log.WriteToJson( SFD.FileName );
+        if (txFocusClient.Tag is Client vCL) {
+
+          var clNumber = vCL.ClientNumber;
+          var llines = _log.Where( l => l.ClientNumber == clNumber );
+          _log.WriteToJson( SFD.FileName, clNumber );
+        }
       }
     }
 
@@ -167,6 +177,8 @@ namespace SConnectLogReader
       if (BGW_Main.IsBusy) return;
 
       RTB.Text = "";
+      PBar_FromThread( 0 );
+
       var inOut = _log.Where( ll => ll.LogLineType == LineType.Open || ll.LogLineType == LineType.ScDisconnected )
                       .OrderBy( l => l.Timestamp );
 
@@ -192,6 +204,8 @@ namespace SConnectLogReader
       RTB.Clear( );
       RTB.Cursor = Cursors.WaitCursor;
       BGW_RTB.RunWorkerAsync( new RTB_JobDescriptor( Job_DumpFocusLog ) );
+
+      PBar_FromThread( 0 );
     }
 
     // job to list all log lines of the focused client
@@ -200,27 +214,35 @@ namespace SConnectLogReader
       if (txFocusClient.Tag == null) return;
 
       string rtb = "";
-      int lcount = 0;
+      int blockCount = 0;
       long clNumber = -1;
+      long lineCounter = 0;
+
       if (txFocusClient.Tag is Client vCL) {
 
         clNumber = vCL.ClientNumber;
         var llines = _log.Where( l => l.ClientNumber == clNumber );
+        var _count = llines.Count( );
+
         foreach (var line in llines) {
           if (BGW_RTB.CancellationPending) return;
 
           rtb += $"{line.LoggedLine}\n";
+          lineCounter++;
 
           // send in chunks
-          if (++lcount > 50) {
+          if (++blockCount > 50) {
             AddText_FromThread( RTB, rtb );
-            lcount = 0;
+            blockCount = 0;
             rtb = "";
+            PBar_FromThread( (lineCounter * 100.0) / _count );
+
           }
 
         }
         // final append
         AddText_FromThread( RTB, rtb );
+        PBar_FromThread( 100 );
       }
     }
 
@@ -333,6 +355,8 @@ namespace SConnectLogReader
         // next
         line = _reader.ReadLine( );
       }
+
+      PBar_FromThread( 100 );
     }
 
     private void BGW_Main_ProgressChanged( object sender, ProgressChangedEventArgs e )
@@ -391,6 +415,18 @@ namespace SConnectLogReader
       }
     }
 
+    // using invoke where required
+    private void PBar_FromThread( double value )
+    {
+      if (pBar.InvokeRequired) {
+        pBar.Invoke( (MethodInvoker)delegate { pBar.Value = (int)Math.Max( Math.Min( value, 100 ), 0 ); } );
+      }
+      else {
+        pBar.Value = (int)Math.Max( Math.Min( value, 100 ), 0 );
+      }
+    }
+
+
     // using the Unicode Control chars range U+2400 .. U+2426
     // implies usage of a font that supports the Controls Set
     // Arial Unicode MS, Segoe UI Symbol, 
@@ -405,7 +441,6 @@ namespace SConnectLogReader
           return Convert.ToChar( code ).ToString( );
         } );
     }
-
 
     #endregion
 

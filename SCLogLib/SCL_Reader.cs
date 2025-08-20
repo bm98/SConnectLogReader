@@ -101,8 +101,10 @@ namespace SCLogLib
       if (_reader.EndOfStream) return "";
 
       try {
+        // the file has one line with only a '\0' char - try to kick it while reading
+
         string line = _reader.ReadLine( );
-        _byteCount += line.Length + 2; // file is ASCII/ANSI not multibyte Unicode +crlf
+        _byteCount += line.Length + 2; // file is ASCII/ANSI not multibyte Unicode + crlf
         line = RemoveNULL( line );
 
         while (string.IsNullOrEmpty( line )) {
@@ -115,13 +117,16 @@ namespace SCLogLib
 
         return line;
       }
-      catch (Exception ex){
+#pragma warning disable CS0168 // Variable is declared but never used
+      catch (Exception ex) {
         ;
       }
+#pragma warning restore CS0168 // Variable is declared but never used
       return "";
     }
 
     // dam file has a line with a NULL char in it ...
+    // either the NULL or any single char line is returned as empty...
     private string RemoveNULL( string line )
     {
       if (line.Length == 1) return "";

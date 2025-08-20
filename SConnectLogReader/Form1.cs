@@ -7,12 +7,10 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using static System.Net.Mime.MediaTypeNames;
+using static System.Windows.Forms.LinkLabel;
 
 namespace SConnectLogReader
 {
@@ -30,12 +28,15 @@ namespace SConnectLogReader
     // debug/measure performance
     private readonly Stopwatch _stopwatch = new Stopwatch( );
 
-
+    /// <summary>
+    /// cTor: partial
+    /// </summary>
     public Form1( )
     {
       InitializeComponent( );
     }
 
+    // form is loading
     private void Form1_Load( object sender, EventArgs e )
     {
       tlp.Dock = DockStyle.Fill;
@@ -51,22 +52,31 @@ namespace SConnectLogReader
     }
 
     // items which may be ignored - usually happen very often and are not always of value to capture
-    // reduces the memory footpring for huge logfiles
+    // reduces the memory footprint for huge logfiles
     private LineType[] _ignoreableItems =  {
       // SimConnect server replies
       LineType.ScEventFrame,
       LineType.ScEvent,
 
       LineType.ScClientData,
+
+      LineType.ScObjectAddRemove,
       LineType.ScObjectData,
       LineType.ScObjectDataByType,
       LineType.ScFacilities_Request, // reply FacilityList
+      LineType.ScICAO_Request,
 
       // SimConnect client commands
       LineType.RequestDataOnSimObject,
       LineType.RequestDataOnSimObjectType,
       LineType.RequestFacilityData,
       LineType.RequestFacilityData_EX1,
+
+      LineType.SetClientData,
+      LineType.SetDataOnSimObject,
+
+      LineType.TransmitClientEvent,
+      LineType.TransmitClientEvent_EX1,
     };
 
     // list of items to ignore while processing (snapshot when starting the scan)
@@ -218,16 +228,20 @@ namespace SConnectLogReader
       long clNumber = -1;
       long lineCounter = 0;
 
+      // also ignore on Dump
+      GetIgnoredItems( );
+
       if (txFocusClient.Tag is Client vCL) {
 
         clNumber = vCL.ClientNumber;
         var llines = _log.Where( l => l.ClientNumber == clNumber );
         var _count = llines.Count( );
 
-        foreach (var line in llines) {
+        foreach (var lline in llines) {
           if (BGW_RTB.CancellationPending) return;
 
-          rtb += $"{line.LoggedLine}\n";
+          if (!ToBeIgnored( lline )) rtb += $"{lline.LoggedLine}\n";
+
           lineCounter++;
 
           // send in chunks
@@ -274,12 +288,12 @@ namespace SConnectLogReader
 
         string clint = _clientCat.GetClientName( excLine.ClientNumber );
 
-        var exID = excLine.Arguments.FirstOrDefault( p => p.Argument == ArgNames.EXCEPTION )?.ArgI;
+        var exID = excLine.Arguments.FirstOrDefault( p => p.Argument == ArgName.EXCEPTION )?.ArgI;
         string exS = ScExceptions.GetExceptionS( exID ?? 0 );
         string culpritS = "unkown or ignored cause line";
 
         // try get the causing line
-        var sendID = excLine.Arguments.FirstOrDefault( p => p.Argument == ArgNames.SendID )?.ArgI;
+        var sendID = excLine.Arguments.FirstOrDefault( p => p.Argument == ArgName.SendID )?.ArgI;
         if (sendID.HasValue && (sendID.Value > 0)) {
           var clintLines = _log.Where( ll => ll.ClientNumber == excLine.ClientNumber );
           var culprit = clintLines.FirstOrDefault( cl => cl.ClientSendID == sendID.Value );
@@ -399,6 +413,7 @@ namespace SConnectLogReader
       if (ctrl.InvokeRequired) {
         ctrl.Invoke( (MethodInvoker)delegate { ctrl.Text = text; } );
       }
+
       else {
         ctrl.Text = text;
       }
@@ -408,10 +423,21 @@ namespace SConnectLogReader
     private void AddText_FromThread( Control ctrl, string text )
     {
       if (ctrl.InvokeRequired) {
-        ctrl.Invoke( (MethodInvoker)delegate { ctrl.Text += text; } );
+        if (ctrl is RichTextBox vRTB) {
+          ctrl.Invoke( (MethodInvoker)delegate { vRTB.AppendText( text ); } ); // should be faster than += ??
+        }
+        else {
+          ctrl.Invoke( (MethodInvoker)delegate { ctrl.Text += text; } );
+        }
       }
+
       else {
-        ctrl.Text += text;
+        if (ctrl is RichTextBox vRTB) {
+          vRTB.AppendText( text ); // should be faster than += ??
+        }
+        else {
+          ctrl.Text += text;
+        }
       }
     }
 

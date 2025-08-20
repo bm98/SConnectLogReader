@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace SCLogLib
 {
   /// <summary>
   /// Argument Names of a LogLine commands
   /// </summary>
-  public enum ArgNames
+  public enum ArgName
   {
     // NOTE: arg names are case sensitive and definend how they appear in logfiles (and SDK docs)
     //       Name as found are of type Integer and stored as long
@@ -472,36 +474,36 @@ namespace SCLogLib
     /// <summary>
     /// LogLine Arg Name for Timestamp 
     /// </summary>
-    public readonly static string TimestampArg = $"Timestamp";
+    public const string TimestampArg = "Timestamp";
     /// <summary>
     /// LogLine Arg Name for ClientNumber 
     /// </summary>
-    public readonly static string ClientNumberArg = $"ClientNumber";
+    public const string ClientNumberArg = "ClientNumber";
     /// <summary>
     /// LogLine Arg Name for ClientSendID 
     /// </summary>
-    public readonly static string ClientSendIDArg = $"ClientSendID";
+    public const string ClientSendIDArg = "ClientSendID";
     /// <summary>
     /// LogLine Arg Name for Cmd 
     /// </summary>
-    public readonly static string CmdArg = $"Cmd";
+    public const string CmdArg = "Cmd";
 
     /// <summary>
     /// LogLine Arg Name for Version 
     /// </summary>
-    public readonly static string VersionArg = $"Version";
+    public const string VersionArg = "Version";
     /// <summary>
     /// LogLine Arg Name for ValueText 
     /// </summary>
-    public readonly static string ValueTextArg = $"ValueText";
+    public const string ValueTextArg = "ValueText";
     /// <summary>
     /// LogLine Arg Name for ValueInteger 
     /// </summary>
-    public readonly static string ValueIntegerArg = $"ValueInteger";
+    public const string ValueIntegerArg = "ValueInteger";
     /// <summary>
     /// LogLine Arg Name for ValueReal 
     /// </summary>
-    public readonly static string ValueRealArg = $"ValueReal";
+    public const string ValueRealArg = "ValueReal";
 
 
     /// <summary>
@@ -513,7 +515,7 @@ namespace SCLogLib
     public static LogLineArgument GetArg( string name, string value )
     {
       // unmarked ones are of type Integer
-      if (Enum.TryParse( name, out ArgNames vPI )) {
+      if (Enum.TryParse( name, out ArgName vPI )) {
         return new LogLineArgument( vPI, FromStringI( value ) ); ;
       }
       // marked with ending S (e.g. NameS) are strings
@@ -533,7 +535,7 @@ namespace SCLogLib
 #endif
 
 #pragma warning disable CS0162 // Unreachable code detected
-        return new LogLineArgument( ArgNames.UnknownS, name + "=" + value );
+        return new LogLineArgument( ArgName.UnknownS, name + "=" + value );
 #pragma warning restore CS0162 // Unreachable code detected
       }
     }
@@ -602,7 +604,7 @@ namespace SCLogLib
     /// </summary>
     /// <param name="argName">Argument Name (type)</param>
     /// <param name="argValue">Argument Value</param>
-    public LogLineArgument( ArgNames argName, object argValue )
+    public LogLineArgument( ArgName argName, object argValue )
     {
       Argument = argName;
       ArgValueObj = argValue;
@@ -611,11 +613,29 @@ namespace SCLogLib
     /// <summary>
     /// The Argument contained
     /// </summary>
-    public ArgNames Argument { get; protected set; } = ArgNames.UnknownS;
+    public ArgName Argument { get; protected set; } = ArgName.UnknownS;
     /// <summary>
     /// The Argument value as object
     /// </summary>
     public object ArgValueObj { get; protected set; } = ""; // default is UnknownS which must be a string
+
+    /// <summary>
+    /// True for an Integer (long) Argument
+    /// </summary>
+    public bool IsInteger => (ArgValueObj != null) && (ArgValueObj is long);
+    /// <summary>
+    /// Argument value converted to Integer (long or long.MinValue)
+    /// </summary>
+    public long ArgI => AsInteger( ArgValueObj );
+
+    /// <summary>
+    /// True for a Real (double) Argument
+    /// </summary>
+    public bool IsReal => (ArgValueObj != null) && (ArgValueObj is double);
+    /// <summary>
+    /// Argument value converted to Real (double or double.NaN)
+    /// </summary>
+    public double ArgR => AsReal( ArgValueObj );
 
     /// <summary>
     /// True for a string Argument
@@ -623,12 +643,14 @@ namespace SCLogLib
     public bool IsText => (ArgValueObj != null) && (ArgValueObj is string);
     /// <summary>
     /// Argument value converted to String (or an empty string)
+    ///   may contain unprintable Ctrl chars (use ArgSescaped if needed)
     /// </summary>
     public string ArgS => AsText( ArgValueObj );
     /// <summary>
     /// Argument value converted to String escaped for JSON i.e. \-> \\
+    ///  and replace Ctrl Chars with an UNICODE Control Set char U+2400 .. U+2426
     /// </summary>
-    protected string ArgSescaped => AsText( ArgValueObj ).Replace( "\\", "\\\\" );
+    protected string ArgSescaped => MakePrintableCtrlChars( AsText( ArgValueObj ) ).Replace( "\\", "\\\\" );
 
     /* BOOL is not used as source type right now
     /// <summary>
@@ -641,35 +663,39 @@ namespace SCLogLib
     /// </summary>
     public bool ArgB => AsBool( ArgValueObj );
 
-    /// <summary>
-    /// True for a Real (double) Argument
-    /// </summary>
-    public bool IsReal => (ArgValueObj != null) && (ArgValueObj is double);
-    /// <summary>
-    /// Argument value converted to Real (double or double.NaN)
-    /// </summary>
-    public double ArgR => AsReal( ArgValueObj );
-
-    /// <summary>
-    /// True for an Integer (long) Argument
-    /// </summary>
-    public bool IsInteger => (ArgValueObj != null) && (ArgValueObj is long);
-    /// <summary>
-    /// Argument value converted to Integer (long or long.MinValue)
-    /// </summary>
-    public long ArgI => AsInteger( ArgValueObj );
 
     /// <summary>
     /// Json of this property
     /// </summary>
-    public string AsJson => $"{{ \"arg\": \"{Argument}\", \"value\": \"{ArgSescaped}\" }}";
-    /*
-        { arg: "", value: "" }
-    */
+    public string AsJson {
+      get {
+        /*
+            { arg: "", value: "" || digits }
+        */
+        if (IsInteger) return $"{{ \"arg\": \"{Argument}\", \"value\": {ArgI.ToString( CultureInfo.InvariantCulture )} }}";
+        else if (IsReal) return $"{{ \"arg\": \"{Argument}\", \"value\": {ArgR.ToString( "F6", CultureInfo.InvariantCulture )} }}";
+        else return $"{{ \"arg\": \"{Argument}\", \"value\": \"{ArgSescaped}\" }}";
+      }
+    }
 
 
     /// <inheritdoc/>
-    public override string ToString( ) => $"{Argument}:{ArgS}";
+    public override string ToString( ) => $"{Argument}:{ArgSescaped}";
 
+
+    // using the Unicode Control chars range U+2400 .. U+2426
+    // implies usage of a font that supports the Controls Set
+    // Arial Unicode MS, Segoe UI Symbol, 
+    private static string MakePrintableCtrlChars( string text )
+    {
+      return Regex.Replace(
+        text,
+       @"\p{Cc}",
+        m => {
+          int code = (int)(m.Value[0]) + 0x2400;
+
+          return Convert.ToChar( code ).ToString( );
+        } );
+    }
   }
 }

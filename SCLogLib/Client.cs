@@ -21,7 +21,7 @@ namespace SCLogLib
       var opens = log.Where( ll => ll.LogLineType == LineType.Open );
       foreach (var openLine in opens) {
         var llines = log.Where( ll => ll.ClientNumber == openLine.ClientNumber );
-        var client = new Client( openLine.ClientNumber, openLine.Arguments.FirstOrDefault( p => p.Argument == ArgNames.NameS ).ArgS, llines.Count( ) );
+        var client = new Client( openLine.ClientNumber, openLine.Arguments.FirstOrDefault( p => p.Argument == ArgName.NameS ).ArgS, llines.Count( ) );
         ret.Add( openLine.ClientNumber, client );
       }
       return ret;

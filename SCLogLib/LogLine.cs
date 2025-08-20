@@ -453,20 +453,87 @@ namespace SCLogLib
   /// </summary>
   public class LogLine
   {
+    // provide LineType Names here where the Enum is defined
+    // - need to define them without the Type mark in order to work for the Tokenizer
+
+    /// <summary>
+    /// LogLine Cmd Name for SimConnect 
+    /// </summary>
+    public const string SimConnectCmd = "SimConnect"; // derived from enum ScSimConnect
+    /// <summary>
+    /// LogLine Cmd Name for Server 
+    /// </summary>
+    public const string ServerCmd = "Server";
+    /// <summary>
+    /// LogLine Cmd Name for Exe Launched 
+    /// </summary>
+    public const string Exe_LaunchedCmd = "Exe_Launched";
+    /// <summary>
+    /// LogLine Cmd Name for Event
+    /// </summary>
+    public const string EventCmd = "Event";
+    /// <summary>
+    /// LogLine Cmd Name for EventFrame
+    /// </summary>
+    public const string EventFrameCmd = "EventFrame";
+    /// <summary>
+    /// LogLine Cmd Name for Flight
+    /// </summary>
+    public const string FlightCmd = "Flight";
+    /// <summary>
+    /// LogLine Cmd Name for AircraftLoaded
+    /// </summary>
+    public const string AircraftLoadedCmd = "AircraftLoaded";
+    /// <summary>
+    /// LogLine Cmd Name for ObjectData
+    /// </summary>
+    public const string ObjectDataCmd = "ObjectData";
+    /// <summary>
+    /// LogLine Cmd Name for ObjectDataByType
+    /// </summary>
+    public const string ObjectDataByTypeCmd = "ObjectDataByType";
+    /// <summary>
+    /// LogLine Cmd Name for ClientData
+    /// </summary>
+    public const string ClientDataCmd = "ClientData";
+    /// <summary>
+    /// LogLine Cmd Name for ObjectAddRemove
+    /// </summary>
+    public const string ObjectAddRemoveCmd = "ObjectAddRemove";
+    /// <summary>
+    /// LogLine Cmd Name for Facilities Request
+    /// </summary>
+    public const string Facilities_RequestCmd = "Facilities_Request";
+    /// <summary>
+    /// LogLine Cmd Name for ICAORequest
+    /// </summary>
+    public const string ICAO_RequestCmd = "ICAO_Request";
+    /// <summary>
+    /// LogLine Cmd Name for Exception
+    /// </summary>
+    public const string ExceptionCmd = "Exception";
+    /// <summary>
+    /// LogLine Cmd Name for Disconnected
+    /// </summary>
+    public const string DisconnectedCmd = "Disconnected";
+
+
+
+
     // returns the Linetype for a Cmd string
     private static LineType LineTypeFromCmd( LogLineArgument cmdProp )
     {
       // sanity
       if (cmdProp == null) return LineType.None;
-      if (cmdProp.Argument != ArgNames.CmdS) throw new ArgumentException( "Must be of type Cmd" );
+      if (cmdProp.Argument != ArgName.CmdS) throw new ArgumentException( "Must be of type Cmd" );
 
       // time consumed is the same for switch case and parse, using TryParse
 
-      // handle IN: cmd matches the Enum
+      // try to handle as IN: cmd matches the Enum
       if (Enum.TryParse( cmdProp.ArgS, out LineType vLT )) {
         return vLT;
       }
-      // handle OUT: by prepending with an Sc mark 
+      // try to handle as OUT: by prepending with an Sc mark 
       else if (Enum.TryParse( "Sc" + cmdProp.ArgS, out vLT )) {
         return vLT;
       }
@@ -586,7 +653,7 @@ namespace SCLogLib
     /// <summary>
     /// The Arguments of this line
     /// </summary>
-    public List<LogLineArgument> Arguments => _arguments;
+    public IEnumerable<LogLineArgument> Arguments => _arguments;
 
     /// <summary>
     /// Timestamp of this LogLine
@@ -643,7 +710,7 @@ namespace SCLogLib
         prop = LogLineArgument.GetArg( propS, valueS );
         _arguments.Add( prop );
 
-        if (prop.Argument != ArgNames.TimestampR) {
+        if (prop.Argument != ArgName.TimestampR) {
           ; // Debug stop - shall never land here
         }
       }
@@ -654,7 +721,7 @@ namespace SCLogLib
         prop = LogLineArgument.GetArg( propS, valueS );
         _arguments.Add( prop );
 
-        if (prop.Argument != ArgNames.CmdS) {
+        if (prop.Argument != ArgName.CmdS) {
           ; // Debug stop - shall never land here
         }
       }
@@ -690,15 +757,15 @@ namespace SCLogLib
       // precalc some often used in queries
 
       Timestamp = -1; // has no timestamp
-      var arg = _arguments.FirstOrDefault( p => p.Argument == ArgNames.TimestampR );
+      var arg = _arguments.FirstOrDefault( p => p.Argument == ArgName.TimestampR );
       if (arg != null) { Timestamp = arg.ArgR; }
 
       ClientNumber = -1; // has no client number
-      arg = _arguments.FirstOrDefault( p => p.Argument == ArgNames.ClientNumber );
+      arg = _arguments.FirstOrDefault( p => p.Argument == ArgName.ClientNumber );
       if (arg != null) { ClientNumber = arg.ArgI; }
 
       ClientSendID = -1; // has no client sendID
-      arg = _arguments.FirstOrDefault( p => p.Argument == ArgNames.ClientSendID );
+      arg = _arguments.FirstOrDefault( p => p.Argument == ArgName.ClientSendID );
       if (arg != null) { ClientSendID = arg.ArgI; }
     }
 
@@ -711,7 +778,7 @@ namespace SCLogLib
     public string AsJson {
       get {
         /*
-            { lineType: "", arguments:[ { arg: "", value: "" }, .. { arg: "", value: "" } ] }
+            { lineType: "", arguments:[ { arg: "", value: "" || digits }, .. { arg: "", value: "" || digits } ] }
          */
         string ps = "";
         foreach (var prop in _arguments) {

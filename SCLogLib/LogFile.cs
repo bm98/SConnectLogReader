@@ -51,9 +51,9 @@ namespace SCLogLib
 
       /*
       logLines:[
-        { lineType: "", arguments: [ { arg: "", value: "" }, .. { arg: "", value: "" } ] },
+        { lineType: "", arguments: [ { arg: "", value: "" || digits }, .. { arg: "", value: "" || digits } ] },
         ..
-        { lineType: "", arguments: [ { arg: "", value: "" }, .. { arg: "", value: "" } ] }
+        { lineType: "", arguments: [ { arg: "", value: "" || digits }, .. { arg: "", value: "" || digits } ] }
       ]
        */
       IEnumerable<LogLine> llines = this;

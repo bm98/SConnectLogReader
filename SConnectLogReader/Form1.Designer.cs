@@ -33,6 +33,7 @@
       this.btSchowOpen = new System.Windows.Forms.Button();
       this.tlp = new System.Windows.Forms.TableLayoutPanel();
       this.panel1 = new System.Windows.Forms.Panel();
+      this.pBar = new System.Windows.Forms.ProgressBar();
       this.btCancel = new System.Windows.Forms.Button();
       this.btFocDump = new System.Windows.Forms.Button();
       this.txFocusClient = new System.Windows.Forms.TextBox();
@@ -45,7 +46,6 @@
       this.clbIgnore = new System.Windows.Forms.CheckedListBox();
       this.btShowExc = new System.Windows.Forms.Button();
       this.label2 = new System.Windows.Forms.Label();
-      this.label3 = new System.Windows.Forms.Label();
       this.tabC = new System.Windows.Forms.TabControl();
       this.tabPage1 = new System.Windows.Forms.TabPage();
       this.RTB = new System.Windows.Forms.RichTextBox();
@@ -55,12 +55,13 @@
       this.BGW_Main = new System.ComponentModel.BackgroundWorker();
       this.SFD = new System.Windows.Forms.SaveFileDialog();
       this.BGW_RTB = new System.ComponentModel.BackgroundWorker();
-      this.pBar = new System.Windows.Forms.ProgressBar();
+      this.groupBox1 = new System.Windows.Forms.GroupBox();
       this.tlp.SuspendLayout();
       this.panel1.SuspendLayout();
       this.tabC.SuspendLayout();
       this.tabPage1.SuspendLayout();
       this.tabPage2.SuspendLayout();
+      this.groupBox1.SuspendLayout();
       this.SuspendLayout();
       // 
       // btScan
@@ -93,7 +94,7 @@
       // 
       // btSchowOpen
       // 
-      this.btSchowOpen.Location = new System.Drawing.Point(3, 287);
+      this.btSchowOpen.Location = new System.Drawing.Point(6, 287);
       this.btSchowOpen.Name = "btSchowOpen";
       this.btSchowOpen.Size = new System.Drawing.Size(80, 22);
       this.btSchowOpen.TabIndex = 3;
@@ -117,14 +118,11 @@
       // 
       // panel1
       // 
+      this.panel1.Controls.Add(this.groupBox1);
       this.panel1.Controls.Add(this.pBar);
-      this.panel1.Controls.Add(this.btCancel);
-      this.panel1.Controls.Add(this.btFocDump);
-      this.panel1.Controls.Add(this.txFocusClient);
       this.panel1.Controls.Add(this.txTimeUsed);
       this.panel1.Controls.Add(this.btSelNone);
       this.panel1.Controls.Add(this.btSelAll);
-      this.panel1.Controls.Add(this.btWriteJSON);
       this.panel1.Controls.Add(this.txNumExc);
       this.panel1.Controls.Add(this.txNumOpen);
       this.panel1.Controls.Add(this.clbIgnore);
@@ -132,7 +130,6 @@
       this.panel1.Controls.Add(this.btSchowOpen);
       this.panel1.Controls.Add(this.txNumEntries);
       this.panel1.Controls.Add(this.label2);
-      this.panel1.Controls.Add(this.label3);
       this.panel1.Controls.Add(this.label1);
       this.panel1.Controls.Add(this.btScan);
       this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -141,9 +138,19 @@
       this.panel1.Size = new System.Drawing.Size(194, 526);
       this.panel1.TabIndex = 0;
       // 
+      // pBar
+      // 
+      this.pBar.Location = new System.Drawing.Point(6, 234);
+      this.pBar.MarqueeAnimationSpeed = 500;
+      this.pBar.Name = "pBar";
+      this.pBar.Size = new System.Drawing.Size(180, 10);
+      this.pBar.TabIndex = 15;
+      this.pBar.Value = 50;
+      // 
       // btCancel
       // 
-      this.btCancel.Location = new System.Drawing.Point(103, 393);
+      this.btCancel.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+      this.btCancel.Location = new System.Drawing.Point(100, 49);
       this.btCancel.Name = "btCancel";
       this.btCancel.Size = new System.Drawing.Size(80, 22);
       this.btCancel.TabIndex = 14;
@@ -153,7 +160,8 @@
       // 
       // btFocDump
       // 
-      this.btFocDump.Location = new System.Drawing.Point(3, 393);
+      this.btFocDump.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+      this.btFocDump.Location = new System.Drawing.Point(3, 49);
       this.btFocDump.Name = "btFocDump";
       this.btFocDump.Size = new System.Drawing.Size(80, 22);
       this.btFocDump.TabIndex = 13;
@@ -163,10 +171,11 @@
       // 
       // txFocusClient
       // 
-      this.txFocusClient.Location = new System.Drawing.Point(3, 365);
+      this.txFocusClient.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+      this.txFocusClient.Location = new System.Drawing.Point(2, 21);
       this.txFocusClient.Name = "txFocusClient";
       this.txFocusClient.ReadOnly = true;
-      this.txFocusClient.Size = new System.Drawing.Size(180, 22);
+      this.txFocusClient.Size = new System.Drawing.Size(178, 22);
       this.txFocusClient.TabIndex = 12;
       this.txFocusClient.TabStop = false;
       // 
@@ -202,7 +211,8 @@
       // btWriteJSON
       // 
       this.btWriteJSON.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-      this.btWriteJSON.Location = new System.Drawing.Point(6, 497);
+      this.btWriteJSON.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+      this.btWriteJSON.Location = new System.Drawing.Point(2, 152);
       this.btWriteJSON.Name = "btWriteJSON";
       this.btWriteJSON.Size = new System.Drawing.Size(80, 22);
       this.btWriteJSON.TabIndex = 8;
@@ -239,7 +249,7 @@
       // 
       // btShowExc
       // 
-      this.btShowExc.Location = new System.Drawing.Point(3, 315);
+      this.btShowExc.Location = new System.Drawing.Point(6, 315);
       this.btShowExc.Name = "btShowExc";
       this.btShowExc.Size = new System.Drawing.Size(80, 22);
       this.btShowExc.TabIndex = 5;
@@ -255,15 +265,6 @@
       this.label2.Size = new System.Drawing.Size(147, 13);
       this.label2.TabIndex = 1;
       this.label2.Text = "Ignore the following types:";
-      // 
-      // label3
-      // 
-      this.label3.AutoSize = true;
-      this.label3.Location = new System.Drawing.Point(0, 349);
-      this.label3.Name = "label3";
-      this.label3.Size = new System.Drawing.Size(86, 13);
-      this.label3.TabIndex = 1;
-      this.label3.Text = "Focused Client:";
       // 
       // tabC
       // 
@@ -304,7 +305,7 @@
       this.tabPage2.Location = new System.Drawing.Point(4, 22);
       this.tabPage2.Name = "tabPage2";
       this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-      this.tabPage2.Size = new System.Drawing.Size(267, 406);
+      this.tabPage2.Size = new System.Drawing.Size(267, 500);
       this.tabPage2.TabIndex = 1;
       this.tabPage2.Text = "Clients";
       this.tabPage2.UseVisualStyleBackColor = true;
@@ -317,7 +318,7 @@
       this.clbClients.FormattingEnabled = true;
       this.clbClients.Location = new System.Drawing.Point(3, 3);
       this.clbClients.Name = "clbClients";
-      this.clbClients.Size = new System.Drawing.Size(261, 400);
+      this.clbClients.Size = new System.Drawing.Size(261, 494);
       this.clbClients.Sorted = true;
       this.clbClients.TabIndex = 0;
       this.clbClients.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.clbClients_ItemCheck);
@@ -348,22 +349,29 @@
       this.BGW_RTB.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BGW_RTB_DoWork);
       this.BGW_RTB.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BGW_RTB_RunWorkerCompleted);
       // 
-      // pBar
+      // groupBox1
       // 
-      this.pBar.Location = new System.Drawing.Point(6, 234);
-      this.pBar.MarqueeAnimationSpeed = 500;
-      this.pBar.Name = "pBar";
-      this.pBar.Size = new System.Drawing.Size(180, 10);
-      this.pBar.TabIndex = 15;
-      this.pBar.Value = 50;
+      this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+      this.groupBox1.Controls.Add(this.txFocusClient);
+      this.groupBox1.Controls.Add(this.btCancel);
+      this.groupBox1.Controls.Add(this.btWriteJSON);
+      this.groupBox1.Controls.Add(this.btFocDump);
+      this.groupBox1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+      this.groupBox1.Location = new System.Drawing.Point(3, 343);
+      this.groupBox1.Name = "groupBox1";
+      this.groupBox1.Size = new System.Drawing.Size(188, 180);
+      this.groupBox1.TabIndex = 16;
+      this.groupBox1.TabStop = false;
+      this.groupBox1.Text = "Focused Client:";
       // 
       // Form1
       // 
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-      this.ClientSize = new System.Drawing.Size(847, 590);
+      this.ClientSize = new System.Drawing.Size(539, 563);
       this.Controls.Add(this.tlp);
       this.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-      this.MinimumSize = new System.Drawing.Size(520, 500);
+      this.MinimumSize = new System.Drawing.Size(520, 600);
       this.Name = "Form1";
       this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
       this.Text = "SimConnect Logfile";
@@ -374,6 +382,8 @@
       this.tabC.ResumeLayout(false);
       this.tabPage1.ResumeLayout(false);
       this.tabPage2.ResumeLayout(false);
+      this.groupBox1.ResumeLayout(false);
+      this.groupBox1.PerformLayout();
       this.ResumeLayout(false);
 
     }
@@ -405,10 +415,10 @@
     private System.Windows.Forms.TextBox txTimeUsed;
     private System.ComponentModel.BackgroundWorker BGW_RTB;
     private System.Windows.Forms.TextBox txFocusClient;
-    private System.Windows.Forms.Label label3;
     private System.Windows.Forms.Button btFocDump;
     private System.Windows.Forms.Button btCancel;
     private System.Windows.Forms.ProgressBar pBar;
+    private System.Windows.Forms.GroupBox groupBox1;
   }
 }
 

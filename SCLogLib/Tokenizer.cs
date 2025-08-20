@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 using static SCLogLib.LogLineArgument;
+using static SCLogLib.LogLine;
 
 namespace SCLogLib
 {
@@ -65,8 +66,8 @@ namespace SCLogLib
       // 0.00000 SimConnect version 12.1.0.0
       if (pLine.Contains( "SimConnect version" )) {
         pLine = $"{TimestampArg}=" + pLine;
-        pLine = pLine.Replace( " SimConnect", $",{CmdArg}=SimConnect" ); // patch CMD
-        pLine = pLine.Replace( " version", $",{VersionArg}=" );
+        pLine = pLine.Replace( " SimConnect", $",{CmdArg}={SimConnectCmd}" ); // patch CMD
+        pLine = pLine.Replace( " version", $",{VersionArg}=" ); // patch ArgName
         pLine = Regex.Replace( pLine, @"\s+", "" ); // reduce space(s) to nothing
         _tokens.AddRange( pLine.Split( new char[] { ',' } ) ); // split by comma
       }
@@ -96,7 +97,7 @@ namespace SCLogLib
             0.34823 Server: Scope=local, Protocol=Pipe, Name=\\.\pipe\Microsoft Flight Simulator\SimConnect, MaxClients=64
         */
         pLine = $"{TimestampArg}=" + pLine;
-        pLine = pLine.Replace( " Server:", $",{CmdArg}=Server," ); // patch.. CMD
+        pLine = pLine.Replace( " Server:", $",{CmdArg}={ServerCmd}," ); // patch.. CMD
         _tokens.AddRange( pLine.Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ) ); // having pairs split by comma
       }
 
@@ -106,7 +107,7 @@ namespace SCLogLib
           0.35522 Exe Launched:  Path="C:\Program Files\FenixSim A320\deps\FenixBootstrapper.exe"  CommandLine=""  Version="2.4.0.2070"
         */
         pLine = $"{TimestampArg}=" + pLine;
-        pLine = pLine.Replace( " Exe Launched:", $",{CmdArg}=Exe_Launched," ); // patch CMD
+        pLine = pLine.Replace( " Exe Launched:", $",{CmdArg}={Exe_LaunchedCmd}," ); // patch CMD
         pLine = pLine.Replace( " Path=", ",Path=" ); // patch.., add comma
         pLine = pLine.Replace( " CommandLine=", ",CommandLine=" ); // patch.., add comma
         pLine = pLine.Replace( " Version=", ",Version=" ); // patch.., add comma
@@ -247,31 +248,31 @@ namespace SCLogLib
 
         if (pLine.Contains( ">>>" )) {
           // < 9.75206 [326] >>>>>  EXCEPTION=25, SendID=0, Index=-1  <<<<<
-          pLine = pLine.Replace( ">>>", "Exception: " ); // make it uniform with others and add a CMD: string
+          pLine = pLine.Replace( ">>>", $"{ExceptionCmd}: " ); // make it uniform with others and add a CMD: string
           // < 9.75206 [326] Exception: >>  EXCEPTION=25, SendID=0, Index=-1  <<<<<
         }
-        pLine = pLine.Replace( "Facilities Request", "Facilities_Request" ); // replace space with _ in command part
-        pLine = pLine.Replace( "ICAO Request", "ICAO_Request" ); // replace space with _ in command part
+        pLine = pLine.Replace( "Facilities Request", $"{Facilities_RequestCmd}" ); // replace with CMD
+        pLine = pLine.Replace( "ICAO Request", $"{ICAO_RequestCmd}" );  // replace with CMD
 
         // < 9.75090 [320] Event: 2  // has no prop=value pair
         // < 183.98791[325] Event: Group = 11  EventID = 172  Data = 1 // another Event that should be left alone below...
         if (pLine.Contains( " Event: " )) {
-          string replacement = $"Event: {ValueIntegerArg}=${{n1}}"; // make a prop field from the number
+          string replacement = $"{EventCmd}: {ValueIntegerArg}=${{n1}}"; // make a prop field from the number
           pLine = Regex.Replace( pLine, @"Event:\s+(?<n1>\d+)", replacement );
         }
         // < 224.74372 [325] EventFrame: 1  166.112946
         else if (pLine.Contains( " EventFrame: " )) {
-          string replacement = $"EventFrame: {ValueIntegerArg}=${{n1}}, {ValueRealArg}=${{n2}}"; // make prop fields from the numbers
+          string replacement = $"{EventFrameCmd}: {ValueIntegerArg}=${{n1}}, {ValueRealArg}=${{n2}}"; // make prop fields from the numbers
           pLine = Regex.Replace( pLine, @"EventFrame:\s+(?<n1>\d+)\s+(?<n2>\d+(\.\d+)?)", replacement );
         }
         // < 57.08117 [328] Flight: 10105
         else if (pLine.Contains( " Flight: " )) {
-          string replacement = $"Flight: {ValueIntegerArg}=${{n1}}"; // make a prop field from the number
+          string replacement = $"{FlightCmd}: {ValueIntegerArg}=${{n1}}"; // make a prop field from the number
           pLine = Regex.Replace( pLine, @"Flight:\s+(?<n1>\d+)", replacement );
         }
         // < 64.04391 [328] AircraftLoaded: 10107
         else if (pLine.Contains( " AircraftLoaded: " )) {
-          string replacement = $"AircraftLoaded: {ValueIntegerArg}=${{n1}}"; // make a prop field from the number
+          string replacement = $"{AircraftLoadedCmd}: {ValueIntegerArg}=${{n1}}"; // make a prop field from the number
           pLine = Regex.Replace( pLine, @"AircraftLoaded:\s+(?<n1>\d+)", replacement );
         }
 

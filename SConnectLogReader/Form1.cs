@@ -1,6 +1,4 @@
-﻿using SCLogLib;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -10,14 +8,16 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
-using static System.Windows.Forms.LinkLabel;
+using SCLogLib;
 
 namespace SConnectLogReader
 {
   public partial class Form1 : Form
   {
+    private const decimal cMB = 1_048_576.0m;
     // Max logfile size when nothing is ignored
-    private const long c_maxFileSize = 100 * 1024 * 1000; // 100MB for now
+    private const decimal c_maxFileSize = 100 * cMB; // 100MB for now
+
     // log reader
     private SCL_Reader _reader;
     // the captured logfile
@@ -91,6 +91,19 @@ namespace SConnectLogReader
       }
     }
 
+    // clean up GUI for a new scan
+    private void InitGui( )
+    {
+      txFocusClient.Text = "";
+      txNumEntries.Text = "";
+      txNumExc.Text = "";
+      txNumOpen.Text = "";
+
+      RTB_Info.Text = "";
+      clbClients.Items.Clear( );
+      RTB_EExit.Text = "";
+      RTB_Dump.Text = "";
+    }
 
     private void btSelAll_Click( object sender, EventArgs e )
     {
@@ -130,6 +143,13 @@ namespace SConnectLogReader
       return _ignoredItems.Contains( logLine.LogLineType );
     }
 
+    // cancel the busy BGW
+    private void btCancel_Click( object sender, EventArgs e )
+    {
+      if (BGW_Main.IsBusy) BGW_Main.CancelAsync( );
+      if (BGW_RTB.IsBusy) BGW_RTB.CancelAsync( );
+    }
+
     // open a logfile
     private void btScan_Click( object sender, EventArgs e )
     {
@@ -140,16 +160,19 @@ namespace SConnectLogReader
       if (OFD.ShowDialog( this ) == DialogResult.OK) {
         txNumEntries.Text = "---";
 
+        InitGui( ); // clear all
+        tabC.SelectTab( "tP_Info" );
+
         _reader = new SCL_Reader( OFD.FileName );
         _reader.LineCountUpdate += _reader_LineCountUpdate;
 
         if (clbIgnore.CheckedItems.Count == 0) {
           if (_reader.FileSize > c_maxFileSize) {
-            RTB.Text = $"File is too long ({_reader.FileSize:###,###,###,##0}) Bytes\n";
-            RTB.Text += $"Max size supported is:  {c_maxFileSize:###,###,###,##0} Bytes\n\n";
-            RTB.Text += $"Try to shorten the file for processing\n";
-            RTB.Text += $"OR ignore some and we will try to run anyway\n\n";
-            RTB.Text += $"which may cause an abort with an OutOfMemory Exception (no check is done for this)\n";
+            RTB_Info.Text = $"File is too long ({_reader.FileSize / cMB:#,##0.0}) MB\n";
+            RTB_Info.Text += $"Max size supported is:  {c_maxFileSize / cMB:#,##0.0} MB\n\n";
+            RTB_Info.Text += $"Try to shorten the file for processing\n";
+            RTB_Info.Text += $"OR ignore some and we will try to run anyway\n\n";
+            RTB_Info.Text += $"which may cause an abort with an OutOfMemory Exception (no check is done for this)\n";
             return;
           }
         }
@@ -157,10 +180,17 @@ namespace SConnectLogReader
       }
     }
 
+    private const decimal c_memLimit = 2_700 * cMB;
+    private long _memAllocated = 0;
+    private bool _memAlert = false;
+
     private void _reader_LineCountUpdate( object sender, EventArgs e )
     {
       SetText_FromThread( txNumEntries, _reader.LinesRead.ToString( "###,###,##0" ) );
       PBar_FromThread( _reader.PercentRead );
+      // check for mem size
+      _memAllocated = Environment.WorkingSet;
+      if (_memAllocated > c_memLimit) _memAlert = true;
     }
 
     private void btWriteJSON_Click( object sender, EventArgs e )
@@ -186,19 +216,22 @@ namespace SConnectLogReader
       // sanity
       if (BGW_Main.IsBusy) return;
 
-      RTB.Text = "";
       PBar_FromThread( 0 );
 
       var inOut = _log.Where( ll => ll.LogLineType == LineType.Open || ll.LogLineType == LineType.ScDisconnected )
                       .OrderBy( l => l.Timestamp );
 
+      // short enough to do this in process
       foreach (var l in inOut) {
         string clint = _clientCat.GetClientName( l.ClientNumber );
 
         string ee = (l.LogLineType == LineType.Open) ? "OPEN:  "
            : (l.LogLineType == LineType.ScDisconnected) ? "DISCO: "
            : "?????: "; // should never happen ..
-        RTB.Text += $"{ee}{clint}: {l.LoggedLine}\n";
+        AddText_FromThread( RTB_EExit, $"{ee}{clint}: {l.LoggedLine}\n" );
+
+        // switch tab
+        tabC.SelectTab( "tP_EntryExit" );
       }
     }
 
@@ -211,8 +244,10 @@ namespace SConnectLogReader
       if (BGW_Main.IsBusy) return;
       if (BGW_RTB.IsBusy) return;
 
-      RTB.Clear( );
-      RTB.Cursor = Cursors.WaitCursor;
+      RTB_Dump.Clear( );
+      tabC.SelectTab( "tP_Dump" );
+      tabC.Cursor = Cursors.WaitCursor;
+
       BGW_RTB.RunWorkerAsync( new RTB_JobDescriptor( Job_DumpFocusLog ) );
 
       PBar_FromThread( 0 );
@@ -238,7 +273,7 @@ namespace SConnectLogReader
         var _count = llines.Count( );
 
         foreach (var lline in llines) {
-          if (BGW_RTB.CancellationPending) return;
+          if (BGW_RTB.CancellationPending) break;
 
           if (!ToBeIgnored( lline )) rtb += $"{lline.LoggedLine}\n";
 
@@ -246,7 +281,7 @@ namespace SConnectLogReader
 
           // send in chunks
           if (++blockCount > 50) {
-            AddText_FromThread( RTB, rtb );
+            AddText_FromThread( RTB_Dump, rtb );
             blockCount = 0;
             rtb = "";
             PBar_FromThread( (lineCounter * 100.0) / _count );
@@ -255,7 +290,7 @@ namespace SConnectLogReader
 
         }
         // final append
-        AddText_FromThread( RTB, rtb );
+        AddText_FromThread( RTB_Dump, rtb );
         PBar_FromThread( 100 );
       }
     }
@@ -271,8 +306,10 @@ namespace SConnectLogReader
       if (BGW_Main.IsBusy) return;
       if (BGW_RTB.IsBusy) return;
 
-      RTB.Clear( );
-      RTB.Cursor = Cursors.WaitCursor;
+      RTB_Exceptions.Clear( );
+      tabC.SelectTab( "tP_Exceptions" );
+      tabC.Cursor = Cursors.WaitCursor;
+
       BGW_RTB.RunWorkerAsync( new RTB_JobDescriptor( Job_ListExceptions ) );
     }
 
@@ -284,7 +321,7 @@ namespace SConnectLogReader
 
       var exceptions = _log.Where( ll => ll.LogLineType == LineType.ScException );
       foreach (var excLine in exceptions) {
-        if (BGW_RTB.CancellationPending) return;
+        if (BGW_RTB.CancellationPending) break;
 
         string clint = _clientCat.GetClientName( excLine.ClientNumber );
 
@@ -310,23 +347,18 @@ namespace SConnectLogReader
 
         // send in chunks
         if (++lcount > 50) {
-          AddText_FromThread( RTB, rtb );
+          AddText_FromThread( RTB_Exceptions, rtb );
           lcount = 0;
           rtb = "";
         }
       }
       // final append
-      AddText_FromThread( RTB, rtb );
+      AddText_FromThread( RTB_Exceptions, rtb );
     }
 
     #endregion
 
     #region RTB Job Handling
-
-    private void btCancel_Click( object sender, EventArgs e )
-    {
-      BGW_RTB.CancelAsync( );
-    }
 
     // a RTB Job (used to fill RTB when many lines are to be supplied)
     private class RTB_JobDescriptor
@@ -345,7 +377,7 @@ namespace SConnectLogReader
 
     private void BGW_RTB_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
     {
-      RTB.Cursor = Cursors.Default;
+      tabC.Cursor = Cursors.Default;
     }
 
     #endregion
@@ -354,7 +386,11 @@ namespace SConnectLogReader
 
     private void BGW_Main_DoWork( object sender, DoWorkEventArgs e )
     {
-      SetText_FromThread( RTB, "START READING" );
+      SetText_FromThread( RTB_Info, "START READING\n" );
+
+      // reset mem tracking - will update when reading lines
+      _memAlert = false;
+      _memAllocated = 0;
 
       GetIgnoredItems( );
       _log = new LogFile( );
@@ -362,6 +398,7 @@ namespace SConnectLogReader
       _stopwatch.Restart( );
       string line = _reader.ReadLine( );
       while (!string.IsNullOrEmpty( line )) {
+        if (_memAlert || BGW_Main.CancellationPending) break;
 
         var lline = new LogLine( line );
         if (!ToBeIgnored( lline )) _log.Add( lline );
@@ -385,8 +422,14 @@ namespace SConnectLogReader
       _reader.Dispose( );
       _reader = null;
 
+      if (_memAlert) {
+        RTB_Info.Text += $"  ** Aborted: reached WorkingSet limit ({c_memLimit / cMB:#,##0.0} MB)\n";
+      }
+
+      RTB_Info.Text += "FINISHED READING\n";
+      RTB_Info.Text += $"Process WorkingSet: {_memAllocated / cMB:#,##0.0} MB allocated)\n";
+      RTB_Info.Text += $"Lines read:  {_log.Count:###,###,##0}\n";
       txNumEntries.Text = _log.Count.ToString( "###,###,##0" );
-      RTB.Text = "FINISHED READING";
 
       // create the client catalog
       _clientCat = Client.ClientList( _log );
@@ -400,7 +443,7 @@ namespace SConnectLogReader
         int index = clbClients.Items.Add( clint );
       }
 
-      txTimeUsed.Text = $"Used: {_stopwatch.ElapsedMilliseconds / 1000.0:##,##0.000} sec";
+      RTB_Info.Text += $"Time used: {_stopwatch.ElapsedMilliseconds / 1000.0:##,##0.000} sec\n";
     }
 
     #endregion
@@ -470,5 +513,43 @@ namespace SConnectLogReader
 
     #endregion
 
+    private void mSelAll_Click( object sender, EventArgs e )
+    {
+      RichTextBox rtb = null;
+      if (tabC.SelectedTab.Name == "tP_Info") rtb = RTB_Info;
+      else if (tabC.SelectedTab.Name == "tP_EntryExit") rtb = RTB_EExit;
+      else if (tabC.SelectedTab.Name == "tP_Exceptions") rtb = RTB_Exceptions;
+      else if (tabC.SelectedTab.Name == "tP_Dump") rtb = RTB_Dump;
+
+      if (rtb != null) {
+        rtb.SelectAll( );
+      }
+    }
+
+    private void mCopy_Click( object sender, EventArgs e )
+    {
+      RichTextBox rtb = null;
+      if (tabC.SelectedTab.Name == "tP_Info") rtb = RTB_Info;
+      else if (tabC.SelectedTab.Name == "tP_EntryExit") rtb = RTB_EExit;
+      else if (tabC.SelectedTab.Name == "tP_Exceptions") rtb = RTB_Exceptions;
+      else if (tabC.SelectedTab.Name == "tP_Dump") rtb = RTB_Dump;
+
+      if (rtb != null) {
+        Clipboard.SetText( rtb.SelectedText );
+      }
+    }
+
+    private void mCopyAll_Click( object sender, EventArgs e )
+    {
+      RichTextBox rtb = null;
+      if (tabC.SelectedTab.Name == "tP_Info") rtb = RTB_Info;
+      else if (tabC.SelectedTab.Name == "tP_EntryExit") rtb = RTB_EExit;
+      else if (tabC.SelectedTab.Name == "tP_Exceptions") rtb = RTB_Exceptions;
+      else if (tabC.SelectedTab.Name == "tP_Dump") rtb = RTB_Dump;
+
+      if (rtb != null) {
+        Clipboard.SetText( rtb.Text );
+      }
+    }
   }
 }

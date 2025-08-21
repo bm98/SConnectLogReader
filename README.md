@@ -4,6 +4,9 @@ A weekend hack project...
  
 ## SCLogLib: 
 A Library to decode SimConnect Log files into a uniform format  
+
+![LogFile_Struct](https://raw.githubusercontent.com/bm98/SConnectLogReader/refs/heads/main/Doc/LogFile_Struct.png "LogFile Definition")
+
 ### Note:
 As the library is at a very early stage there will be missing decodings for server issued replies which I have not seen yet.  
 Either add those or raise an issue including examples of such lines.  
@@ -12,11 +15,12 @@ The debug mode of the library will raise ArgumentExceptions when such lines are 
 
 
 ## SConnectLogReader: 
-WinForms App using the library to create some useful insights  
+WinForms Demo App using the library to create some useful insights  
 The app can handle logs up to about 1Mio lines but will fail with OutOfMemory if
 the input log is too big - an no check is made for that case...
 
 ### You may build and extend as needed
+
 
 ![ClientList](https://raw.githubusercontent.com/bm98/SConnectLogReader/refs/heads/main/Doc/ClientList.png "Client List")
 ![ExceptionView](https://raw.githubusercontent.com/bm98/SConnectLogReader/refs/heads/main/Doc/ExceptionView.png "Exception View")

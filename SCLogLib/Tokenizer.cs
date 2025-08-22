@@ -275,6 +275,11 @@ namespace SCLogLib
           string replacement = $"{AircraftLoadedCmd}: {ValueIntegerArg}=${{n1}}"; // make a prop field from the number
           pLine = Regex.Replace( pLine, @"AircraftLoaded:\s+(?<n1>\d+)", replacement );
         }
+        // TODO PROSPECTIVE HANDLING TO BE TESTED < 64.04391 [328] Flow Event: 10107
+        else if (pLine.Contains( " Flow Event: " )) {
+          string replacement = $"{Flow_EventCmd}: {ValueIntegerArg}=${{n1}}"; // make a prop field from the number
+          pLine = Regex.Replace( pLine, @"Flow Event:\s+(?<n1>\d+)", replacement );
+        }
 
         // derive Cmd, ClientNumber and ClientSendID
         // 183.98791[330, 4041]SetInputEvent:

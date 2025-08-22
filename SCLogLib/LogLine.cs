@@ -98,6 +98,13 @@ namespace SCLogLib
     /// </summary>
     ScDisconnected,
 
+    // *** TO BE TESTED...
+
+    /// <summary>
+    /// TODO Prospective reply to a Flow Event subscription
+    /// OUT: 484.00751 [331] Flow_Event:  Flow_Event=
+    /// </summary>
+    ScFlow_Event,
 
     // included and ordered them along the SDK 2024 listing
 
@@ -285,6 +292,11 @@ namespace SCLogLib
     /// </summary>
     SetSystemEventState,
     /// <summary>
+    /// Not seen in logs
+    /// IN: 165.45103 [333, 2408] SubscribeToFlowEvent:
+    /// </summary>
+    SubscribeToFlowEvent,
+    /// <summary>
     /// IN: 9.05804 [321, 2]SubscribeToSystemEvent:EventID=0, SystemEventName="6Hz"
     /// </summary>
     SubscribeToSystemEvent,
@@ -300,6 +312,11 @@ namespace SCLogLib
     /// IN: 57.21751 [328, 2203]UnsubscribeFromSystemEvent:EventID=10107
     /// </summary>
     UnsubscribeFromSystemEvent,
+    /// <summary>
+    /// Not seen in logs
+    /// IN: 165.45103 [333, 2408] UnsubscribeToFlowEvent:
+    /// </summary>
+    UnsubscribeToFlowEvent,
 
     // Section Flights
 
@@ -336,8 +353,12 @@ namespace SCLogLib
     /// </summary>
     ClearAllFacilityDataDefinitionFilters,
     /// <summary>
-    /// IN: 233.94930 [331, 2]RequestFacilitiesList:type=0, RequestID=31001
+    /// IN: 233.94930 [331, 2]RequestAllFacilities:type=0, RequestID=31001
     /// </summary>
+    RequestAllFacilities,
+      /// <summary>
+      /// IN: 233.94930 [331, 2]RequestFacilitiesList:type=0, RequestID=31001
+      /// </summary>
     RequestFacilitiesList,
     /// <summary>
     /// IN: 233.94930 [331, 2]RequestFacilitesList_EX1:type=0, RequestID=31001
@@ -484,6 +505,10 @@ namespace SCLogLib
     /// LogLine Cmd Name for AircraftLoaded
     /// </summary>
     public const string AircraftLoadedCmd = "AircraftLoaded";
+    /// <summary>
+    /// TODO LogLine Cmd Name for Flow Event  *** PROSPECTIVE TO BE TESTED
+    /// </summary>
+    public const string Flow_EventCmd = "Flow_Event";
     /// <summary>
     /// LogLine Cmd Name for ObjectData
     /// </summary>
